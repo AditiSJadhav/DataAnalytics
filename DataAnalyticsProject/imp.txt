@@ -1,0 +1,152 @@
+LOGISTIC REGRESSION MODEL
+
+setwd("C:/Users/reshm/Downloads/test/")
+
+#Import data for Logistic Regression
+data_lg=read.csv("IBM HR Data.csv",header=T)
+
+#Creating Dummy variables to convert categorical variables into numeric dummy variables 
+log_data=dummy.data.frame(data_lg,names=c("BusinessTravel","Department","Education",
+                                          "EducationField","Gender","JobRole","MaritalStatus"))
+
+#Converting dependent variable into factor and substituting by 0 and 1.
+log_data$Attrition<-as.factor(log_data$Attrition)
+log_data$Attrition<-mapvalues(log_data$Attrition, from=c('Yes', 'No'), to= c(1,0))
+
+#Displaying
+summary(log_data)
+
+#Verifying if all variables converted into numerical expect Attrition
+sapply(log_data,is.numeric)
+
+#Splitting data into train and test data
+train.data=log_data[1:floor(0.8*nrow(log_data)),]
+test.data=log_data[floor(0.8*nrow(log_data)+1):nrow(log_data),]
+
+#Creating Full model considering all the attributes
+full_logistic=glm(Attrition~.,data=train.data,family = binomial())
+full_logistic
+
+#Creating Backward model using step function
+back_logistic=step(full_logistic, direction="backward", trace=F)
+summary(back_logistic)
+
+#Creating forward model using forward step function 
+base=glm(Attrition~Age,data=train.data,family = binomial())
+fwd_logistic=step(base,scope=list(upper=full_logistic,lower~1), direction="forward", trace=F)
+summary(fwd_logistic)
+
+#Creating forward model using step function with direction="both"
+both_log=step(full_logistic, direction="both", trace=F)
+summary(both_log)
+
+#Calculating Accuracy for Forward Logistic Model
+thresh <- 0.5
+predictedAttritionNumLog <- predict(fwd_logistic,newdata=test.data,type='response')
+predictedAttritionLog <- ifelse(predictedAttritionNumLog > thresh,1,0) 
+test.data$predictedAttrition <- predictedAttritionLog
+cm <- confusionMatrix(table(test.data$Attrition,test.data$predictedAttrition))
+test.data$predictedAttrition <- as.factor(test.data$predictedAttrition)
+table <- data.frame(confusionMatrix(test.data$Attrition, test.data$predictedAttrition)$table)
+cm
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+KNN CLASSIFICATION MODEL
+
+setwd("C:/Users/reshm/Downloads/test/")
+
+#Import data for KNN classification
+data_KNN=read.csv("IBM HR Data.csv",header=T)
+
+#Creating Dummy variables for the categorical variables
+Knn_data=dummy.data.frame(data_KNN,names=c("BusinessTravel","Department","Education",
+                                           "EducationField","Gender","JobRole","MaritalStatus"))
+
+#Converting dependent variable into factor and substituting by 0 and 1.
+Knn_data$Attrition<-as.factor(Knn_data$Attrition)
+Knn_data$Attrition<-mapvalues(Knn_data$Attrition, from=c('Yes', 'No'), to= c(1,0))
+
+#Displaying
+summary(Knn_data)
+
+#Applying Normalization on the dummy data set
+Normalknn_data=sapply(Knn_data,is.numeric)
+Knn_data[Normalknn_data]= lapply(Knn_data[Normalknn_data],scale)
+head(Knn_data)
+
+#Splitting data into train and test data
+train.data=Knn_data[1:floor(0.8*nrow(Knn_data)),]
+test.data=Knn_data[floor(0.8*nrow(Knn_data)+1):nrow(Knn_data),]
+
+#Using KNN to build models and calculating accuracy
+knn.1=knn(train.data,test.data,train.data$Attrition, k=1)
+knn.5=knn(train.data,test.data,train.data$Attrition, k=5)
+knn.15=knn(train.data,test.data,train.data$Attrition, k=15)
+knn.25=knn(train.data,test.data,train.data$Attrition, k=25)
+knn.50=knn(train.data,test.data,train.data$Attrition, k=50)
+
+#Calculating accuracy
+accuracy(test.data$Attrition,knn.1)
+accuracy(test.data$Attrition,knn.5)
+accuracy(test.data$Attrition,knn.15)
+accuracy(test.data$Attrition,knn.25)
+accuracy(test.data$Attrition,knn.50)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+NAIVE-BAYES CLASSIFICATION MODEL
+
+setwd("C:/Users/reshm/Downloads/test/")
+
+getwd()
+
+#Import data for Naive-Bayes classification
+data_nb=read.csv("IBM HR Data.csv",header=T)
+
+#Converting numerical variables to categorical using Cut function
+data_nb$Age<-cut(data_nb$Age, breaks = c(-Inf,28,38,45,Inf),
+                 labels = c("Freshers","Experienced","Seniors","Managers"),right = FALSE)
+data_nb$DistanceFromHome<-cut(data_nb$DistanceFromHome,breaks = c(-Inf,3,8,15,Inf),
+                              labels = c("Near","Little Near","Far","Farthest"),right = FALSE)
+data_nb$Education<-cut(data_nb$Education,breaks = c(-Inf,2,3,4,Inf),
+                       labels = c("High School","Bachelors","Masters","PhD"),right = FALSE)
+data_nb$JobLevel<-cut(data_nb$JobLevel,5)
+data_nb$MonthlyIncome<-cut(data_nb$MonthlyIncome,5)
+data_nb$NumCompaniesWorked<-cut(data_nb$NumCompaniesWorked,5)
+data_nb$PercentSalaryHike<-cut(data_nb$PercentSalaryHike,5)
+data_nb$StockOptionLevel<-cut(data_nb$StockOptionLevel,5)
+data_nb$TotalWorkingYears<-cut(data_nb$TotalWorkingYears,5)
+data_nb$TrainingTimesLastYear<-cut(data_nb$TrainingTimesLastYear,5)
+data_nb$YearsAtCompany<-cut(data_nb$YearsAtCompany,5)
+data_nb$YearsSinceLastPromotion<-cut(data_nb$YearsSinceLastPromotion,3)
+data_nb$YearsWithCurrManager<-cut(data_nb$YearsWithCurrManager,3)
+
+#Converting remaining variables into factors
+data_nb$Attrition<-as.factor(data_nb$Attrition)
+data_nb$BusinessTravel<-as.factor(data_nb$BusinessTravel)
+data_nb$Department<-as.factor(data_nb$Department)
+data_nb$EducationField<-as.factor(data_nb$EducationField)
+data_nb$Gender<-as.factor(data_nb$Gender)
+data_nb$JobRole<-as.factor(data_nb$JobRole)
+data_nb$MaritalStatus<-as.factor(data_nb$MaritalStatus)
+
+#Displaying
+summary(data_nb)
+
+#Splitting data into train and test data
+train.data=data_nb[1:floor(0.8*nrow(data_nb)),]
+test.data=data_nb[floor(0.8*nrow(data_nb)+1):nrow(data_nb),]
+
+#Creating Naive-Bayes model using hold out evaluation
+model_nb=naiveBayes(Attrition~.,data=train.data)
+model_nb
+
+#Predicting on test data
+predict(model_nb,newdata=test.data)
+prob= predict(model_nb,newdata=test.data)
+
+#Calculating Accuracy of model using confusion matrix
+cm=table(test.data$Attrition, prob)
+confusionMatrix(cm)
